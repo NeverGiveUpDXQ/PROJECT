@@ -1,0 +1,52 @@
+STATE_NAME,STATE_ABBR,Count,Biden,Trump,Results
+Alabama,AL,9,0.365,0.621,REP
+Alaska,AK,3,0.33,0.629,PROG
+Arizona,AZ,11,0.495,0.4894,PROG
+Arkansas,AR,6,0.346,0.626,REP
+California,CA,55,0.651,0.33,DEM
+Colorado,CO,9,0.553,0.421,DEM
+Connecticut,CT,7,0.593,0.391,DEM
+Delaware,DE,3,0.588,0.398,DEM
+District of Columbia,DC,3,0.933,0.052,DEM
+Florida,FL,29,0.478,0.512,REP
+Georgia,GA,16,0.4948,0.4927,PROG
+Hawaii,HI,4,0.637,0.343,DEM
+Idaho,ID,4,0.331,0.638,REP
+Illinois,IL,20,0.553,0.427,DEM
+Indiana,IN,11,0.409,0.57,REP
+Iowa,IA,6,0.449,0.531,REP
+Kansas,KS,6,0.411,0.567,REP
+Kentucky,KY,8,0.36,0.622,REP
+Louisiana,LA,8,0.398,0.585,REP
+Maine,ME,4,0.535,0.434,DEM
+Maryland,MD,10,0.631,0.351,DEM
+Massachusetts,MA,11,0.653,0.325,DEM
+Michigan,MI,16,0.505,0.479,DEM
+Minnesota,MN,10,0.525,0.424,DEM
+Mississippi,MS,6,0.389,0.585,REP
+Missouri,MO,10,0.413,0.569,REP
+Montana,MT,3,0.404,0.567,REP
+Nebraska,NE,5,0.391,0.585,REP
+Nevada,NV,6,0.5,0.478,DEM
+New Hampshire,NH,4,0.526,0.455,DEM
+New Jersey,NJ,14,0.584,0.401,DEM
+New Mexico,NM,5,0.542,0.436,DEM
+New York,NY,29,0.557,0.429,DEM
+North Carolina,NC,15,0.486,0.5,PROG
+North Dakota,ND,3,0.317,0.65,REP
+Ohio,OH,18,0.452,0.533,REP
+Oklahoma,OK,7,0.323,0.654,REP
+Oregon,OR,7,0.565,0.404,DEM
+Pennsylvania,PA,20,0.4967,0.4906,DEM
+Rhode Island,RI,4,0.594,0.391,DEM
+South Carolina,SC,9,0.434,0.551,REP
+South Dakota,SD,3,0.356,0.618,REP
+Tennessee,TN,11,0.374,0.607,REP
+Texas,TX,38,0.463,0.522,REP
+Utah,UT,6,0.372,0.587,REP
+Vermont,VT,3,0.649,0.317,DEM
+Virginia,VA,13,0.54,0.44,DEM
+Washington,WA,12,0.588,0.387,DEM
+West Virginia,WV,5,0.3,0.682,REP
+Wisconsin,WI,10,0.4945,0.4883,DEM
+Wyoming,WY,3,0.266,0.7,REP

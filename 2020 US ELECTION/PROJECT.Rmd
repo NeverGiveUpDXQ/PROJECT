@@ -1,0 +1,241 @@
+---
+title: "PROJECT"
+author: "GROUP 10"
+date: "11/8/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load packages, message=FALSE, warning=FALSE}
+library(usmap)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(plyr)
+library(socviz)
+library(ggrepel)
+library(readr)
+library(ggthemes)
+library(gifski)
+library(gganimate)
+library(directlabels)
+library(png)
+library(transformr)
+library(grid)
+```
+
+# I. Introduction
+Comparing to tedious TV series, US elections will definitely increase your adrenaline. We cannot tell who will win until the last minute. I treated election data on November 8th as the final result considering unpredictable election conditions and also the approaching project deadline.
+
+# II. Data 
+**Data Source**:
+Because the US election is still in progress, I cannot get full original data. After comparing different data sources, I manually collected data from Google at 10:47 a.m. E.T. Although some states haven’t yet to announce results (i.e. Alaska, Ariz., Ga., N.C), their votes cannot flip this result cuz Joseph R. Biden Jr. has already had 279 votes (above the 270 needed).
+
+```{r, message=FALSE}
+president2020 <- read_csv('President2020.csv')
+head(president2020)
+```
+
+**Data description**:
+
+- STATE_NAME: State Name
+
+- STATE_ABBR: State Abbreviation
+
+- Count: Electoral Vote
+
+- Biden/Trump: Vote percentage
+
+- Results: Who win this state? 
+1) REP 2) DEM 3) PROG = haven't yet annouced the result
+
+**Data transformation**:
+```{r}
+# Relevel to the end
+president2020 <- president2020 %>%
+  mutate(Results = fct_relevel(president2020$Results,'PROG', after = Inf))
+
+# convert to categorical variables
+qb_t = quantile(president2020$Trump,c(0,0.2,0.4,0.6,0.8,1.0))
+qb_b = quantile(president2020$Biden,c(0,0.2,0.4,0.6,0.8,1.0))
+
+president2020 <- president2020%>%
+  mutate(Trump_cut =  cut(president2020$Trump,qb_t,labels = c("0-20%", "20-40%","40-60%","60-80%", "80-100%"),include.lowest = TRUE)) %>%
+  mutate(Biden_cut =  cut(president2020$Biden,qb_b,labels = c("0-20%", "20-40%","40-60%","60-80%", "80-100%"),include.lowest = TRUE))
+```
+
+No missing values here.
+
+# III. Election Visualization
+## State-level
+```{r}
+data("statepop")
+
+statepop1 = statepop %>%
+  full_join(president2020,by = c("abbr" = "STATE_ABBR" ))
+
+# Trump
+plot_usmap(data = statepop1,regions = "states", values = "Trump_cut",color = "white")+ 
+  scale_fill_brewer(palette="Reds")+
+  labs(title = "2020 US Election Results: Donald Trump Vote%",caption = "Source: Google data : Nov 8 10:47 a.m. E.T.", fill = NULL)+
+  theme(legend.position = "right")
+
+# Biden
+plot_usmap(data = statepop1,regions = "states", values = "Biden_cut",color = "white")+ 
+  scale_fill_brewer(palette="Blues")+
+  labs(title = "2020 US Election Results: Joe Biden Vote%",caption = "Source: Google data : Nov 8 10:47 a.m. E.T.", fill = NULL)+
+  theme(legend.position = "right")
+
+# summary
+plot_usmap(data = statepop1,regions = "states", values = "Results",color = "white")+ 
+  scale_fill_manual(values=c("#19609F","#CB1C2A",'grey'),labels=c("Biden","Trump", 'Processing results'))+
+  labs(title = "2020 US election results: Joe Biden Elected President ",caption = "Source: Google data : Nov 8 10:47 a.m. E.T.", fill = NULL)+
+  theme(legend.position = "right")
+```
+
+
+## County-level
+There are so many counties in the United States. It's hard for me to manually collect them one by one. Thanks for the great job by [*Tony McGovern*](https://github.com/tonmcg/US_County_Level_Election_Results_08-20/blob/master/2020_US_County_Level_Presidential_Results.csv)
+```{r, message=FALSE}
+County2020 <- read_csv('https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv')
+
+county_full <- right_join(county_map,County2020, by = c('id' = 'county_fips')) %>% as_tibble()
+
+# *per_dem* and *per_gop* refer to the percentage of votes going to Democrats and Republicans respectively.
+# *diff* represents the absolute difference between Republican votes - Democrat votes.
+# *per_point_diff* represents this difference as a percentage of total votes.
+
+b1 <- c(min(county_full$diff))
+b2 <- fivenum(county_full$diff[county_full$diff<0])[3]
+b3 <- 0
+b4 <- fivenum(county_full$diff[county_full$diff>0])[3]
+b5 <- c(max(county_full$diff))
+
+diff_l <- cut(county_full$diff, breaks = c(b1,b2,b3,b4,b5))
+
+ggplot(county_full,
+       aes(x = long, y = lat, fill = diff_l, group = group))+
+  geom_polygon(color = 'white', size = 0.5)+
+  coord_equal()+
+   scale_fill_manual(values=c("#1aa6b7","#b2deec",'#ce6262','#af2d2d'),labels = c('Dem>>Rep','Dem>Rep','Dem<Rep','Dem<<Rep'))+
+  labs(fill = "Absolute Difference")+
+  theme_map()+
+  guides(fill = guide_legend(nrow = 1))+
+  theme(legend.position = 'bottom')+
+  labs(title = "2020 US Election Results: Absolute Difference",caption = "github::tonmcg & socviz::county_map")
+
+```
+
+Comparing 4 plots, we can see: If we simply compare the area in the 1st and 2nd plot or see the 3rd or 4th plot, we may conclude that Trump win this election. However, don't forget electoral votes are related to population. Also, it's interesting to note that *WI*, *MI*, *PA* are 'turn blue' (hard to predict it in advance).
+
+## Time-level
+As I said before, 2020 election is still in progress. And then I cannot get complete data. So, here, I use historical U.S. presidential election data provided in the `socviz` library. ( [Update 2016 data](https://en.wikipedia.org/wiki/2016_United_States_presidential_election) and Data for 2020 are provisonal) \n
+In this part, I will compare popular vote and electoral college vote from 1824 to 2020 (Note that **Data for 2020 are provisonal**). *It's possible the candidate with the most votes from the public won't be the winner. This is because the president is not chosen directly by the voters, but what's known as the electoral college. (This explained by [BBC](https://www.bbc.com/news/world-us-canada-53558176) )*
+```{r, fig.width=8}
+# Code reference: https://socviz.co/workgeoms.html#workgeoms
+# HIGHLY recommended this book!! Really APPRECIATE:)
+
+# At that time, data for 2016 were provisonal. Now, I could update data for this year.
+
+# Update data
+data(elections_historic)
+elections_historic_new <- elections_historic 
+elections_historic_new$ec_pct[elections_historic_new$year == 2016] <- 304/(304+227)
+elections_historic_new$popular_pct[elections_historic_new$year == 2016] <- 0.461
+elections_historic_new$popular_margin[elections_historic_new$year == 2016] <- -0.021
+
+elections_historic_full <- elections_historic_new
+elections_historic_new <- elections_historic_new %>%
+  select(c(win_party,popular_pct,ec_pct,winner_label))
+
+# add data for 2020  
+data2020 <- data.frame(win_party = 'Dem.',popular_pct = 0.507,ec_pct = 279/(279+214), winner_label = 'Biden 2020')
+
+elections_historic_new <- rbind(elections_historic_new,data2020)
+
+# plot
+ggplot(elections_historic_new, aes(x = popular_pct, 
+                                   y = ec_pct,
+                                   label = winner_label))+
+  geom_hline(yintercept = 0.5, size = 1.4, color = "gray80")+
+  geom_vline(xintercept = 0.5, size = 1.4, color = "gray80")+
+  geom_point(aes(colour = factor(win_party))) +
+  geom_text_repel(size = 2) + # deal with overlapping labels
+  scale_x_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent) +
+  annotate(geom = "rect", xmin = 0.37, xmax = 0.497, ymin = 0.51, ymax = 0.85, fill = "red", alpha = 0.2) + 
+  annotate(geom = "text", x = 0.35, y = 0.9, label = "Electoral vote is high \nbut with low share of popular vote", hjust = 0)+
+  labs(x = "Winner's share of popular vote", 
+       y = "Winner's share of electoral college vote", 
+       title = "Presidential Elections: Popular & Electoral College Margins", subtitle = "From 1824 to 2020(Data for 2020 are provisional)",
+       caption = "Source: socviz::elections_historic & google", fill = "Party affiliation of winner")+
+  theme_classic()+
+  theme(legend.position = 'bottom')
+```
+
+From this plot, we can see: 
+
+- Ideally, we may think the president also have high share of popular vote. Those data in the red rectangular shows not this case. This can be explained by [how the US presidential election works](https://en.wikipedia.org/wiki/United_States_presidential_election).
+
+- Adams 1824 may be regarded as an outlier. However, after looking up Wiki, He is actually from Democratic-Republican Party.
+- Finally, I can regard Roosevelt as an outstanding candidate since his electoral vote and popular vote are very high.
+
+\n
+Finally, we compare the share of electoral college vote between *Dem.* and *Rep.*.
+```{r}
+t_win <- elections_historic_full %>%
+  filter(win_party %in% c("Dem.","Rep.")) %>%
+  select(year,ec_pct,win_party)
+
+t_los <- t_win %>%
+  mutate(ec_pct = 1 - ec_pct) %>%
+  mutate(win_party = ifelse(t_win$win_party == 'Dem.', 'Rep.', 'Dem.')) %>%
+  select(year,ec_pct,win_party)
+
+compare <- rbind(t_win,t_los) 
+names(compare) <- c('Year','Votes_PERCEN','Party')
+
+# plot
+p <- ggplot(compare, aes(Year, Votes_PERCEN, frame = Year, size = Votes_PERCEN, group = Party,colour = Party)) +
+  geom_point()+
+  scale_color_manual(values=c("#19609F","#CB1C2A"))+
+  transition_time(Year) +
+  shadow_wake(wake_length = 0.05, alpha = FALSE) +
+  labs(x = "", y = "", 
+      title = "Presidential Elections:The Share of Electoral Votes for Dem. and Rep. Respetively", subtitle = "Year : {frame_time} (Data for 2020 are provisional)",
+       caption = "Source: socviz::elections_historic & google", fill = NULL)+
+  #coord_cartesian(clip = 'off') + 
+  #ease_aes('cubic-in-out')+
+  theme_classic()
+
+animate(p, fps = 3)
+```
+
+
+From this plot, we can see: Excluding year ftom 1875-1900, the votes percentage difference is relatively huge.
+
+# IV. Conclusion
+
+- Limitations: As I said, US election hasn't 'finished' yet. So then I cannot collect full complete data. I.e. **data for 2020 are not the final results**.
+
+- Future directions: Becasue I'm not familiar with geodata and their visualization, what I did are totally *mimic* and try to understand codes. In the future, I could do it better, e.g. how to add labels to different counties and deal with overlapping labels.
+
+- Lessons learned: Data collecting and preprocessing are annoying:( It isn't that easy to visualize data. We need to consider their colors, locations, scales and etc.
+
+# V. Reference
+REALLY APPRECIATE IT! 
+
+[RainDu](https://zhuanlan.zhihu.com/p/27069584)
+
+[Harish Nagpal: Election Visualization with R](https://medium.com/analytics-vidhya/election-visualization-with-r-8b790250d889)
+
+[Kieran Healy: Data Visualization - A practical introduction ](https://socviz.co/maps.html)
+
+[Iteration and animation: Loops, GIFs, and videos](https://paldhous.github.io/ucb/2018/dataviz/week14.html)
+
+[CREATE ANIMATION IN R : LEARN BY EXAMPLES](https://www.listendata.com/2019/05/create-animation-in-r-learn-with.html)
